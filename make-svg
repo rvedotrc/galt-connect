@@ -1,0 +1,252 @@
+#!/usr/bin/perl
+# vi: set ts=4 sw=4 :
+
+use warnings;
+use strict;
+
+=pod
+
+http://en.wikipedia.org/wiki/Connect_%28game%29
+
+In more detail, Connect's overall 140 pieces include
+
+a) Regular cards (continuous tracks)
+
+a1) Mono-line
+
+    14 red cards (6 straight, 4 left turn, 4 right turn)
+    14 blue cards (6 straight, 4 left turn, 4 right turn)
+    14 black cards (6 straight, 8 curved; the black line is in the middle, therefore there is no difference between left and right turn cards)
+
+a2) Double line
+
+    14 black-red cards (6 straight, 4 left turn, 4 right turn)
+    14 black-blue cards (6 straight, 4 left turn, 4 right turn)
+    14 blue-red cards (6 straight, 4 left turn, 4 right turn)
+
+a3) Triple line
+
+    14 cards with lines in three colours (6 straight, 4 left turn, 4 right right)
+
+b) 40 straight switch-track-cards where one or more colour lines stop whereas the other one(s) either continue or start. They can be grouped into 20 pairs similar but mirror-inverted cards.
+
+c) Two split-route pieces which differ one from the other (they are not mirror-inverted) but can be attached one to another at their three-line-side.
+
+=cut
+
+unlink <galt-*.svg>;
+my $seq = 0;
+
+my $TILE_SIZE = 280;
+my $HALF_SIZE = $TILE_SIZE / 2;
+my $LINE_WITH = 20;
+my $TERMINUS_RADIUS = 20;
+my $TRACK_SEPARATION = 60;
+
+my @COLOURS = qw( red black blue );
+
+my @EDGE_OFFSETS = (
+	$HALF_SIZE - $TRACK_SEPARATION, 
+	$HALF_SIZE,
+	$HALF_SIZE + $TRACK_SEPARATION, 
+);
+
+my @CURVE_RADII = @EDGE_OFFSETS;
+
+# possible lines, including rotations:
+# straight: t,m,b l,c,r
+# curve: {nw,ne,se,sw}{s,m,l}
+# straight with terminus: {l,r}{t,m,b} {t,b}{l,c,r}
+
+# The mono-line pieces
+for my $i (0, 1, 2) {
+    write_svg(
+		qq{<path d="M$EDGE_OFFSETS[$i],0 L$EDGE_OFFSETS[$i],$TILE_SIZE" stroke="$COLOURS[$i]" stroke-width="$LINE_WITH" />},
+	) for 1..6;
+
+	write_svg(
+		qq{<path d="M$EDGE_OFFSETS[$i],$TILE_SIZE A$CURVE_RADII[$i],$CURVE_RADII[$i] 0 0,0 0,$EDGE_OFFSETS[2-$i]" fill="none" stroke="$COLOURS[$i]" stroke-width="$LINE_WITH" />},
+	) for 1..4;
+
+	write_svg(
+		qq{<path d="M$EDGE_OFFSETS[$i],$TILE_SIZE A$CURVE_RADII[2-$i],$CURVE_RADII[2-$i] 0 0,1 $TILE_SIZE,$EDGE_OFFSETS[$i]" fill="none" stroke="$COLOURS[$i]" stroke-width="$LINE_WITH" />},
+	) for 1..4;
+}
+
+# The double line pieces
+for my $i (0, 1, 2) {
+	my $j = ($i+1) % 3;
+    write_svg(
+		qq{<path d="M$EDGE_OFFSETS[$i],0 L$EDGE_OFFSETS[$i],$TILE_SIZE" stroke="$COLOURS[$i]" stroke-width="$LINE_WITH" />},
+		qq{<path d="M$EDGE_OFFSETS[$j],0 L$EDGE_OFFSETS[$j],$TILE_SIZE" stroke="$COLOURS[$j]" stroke-width="$LINE_WITH" />},
+	) for 1..6;
+
+	write_svg(
+		qq{<path d="M$EDGE_OFFSETS[$i],$TILE_SIZE A$CURVE_RADII[$i],$CURVE_RADII[$i] 0 0,0 0,$EDGE_OFFSETS[2-$i]" fill="none" stroke="$COLOURS[$i]" stroke-width="$LINE_WITH" />},
+		qq{<path d="M$EDGE_OFFSETS[$j],$TILE_SIZE A$CURVE_RADII[$j],$CURVE_RADII[$j] 0 0,0 0,$EDGE_OFFSETS[2-$j]" fill="none" stroke="$COLOURS[$j]" stroke-width="$LINE_WITH" />},
+	) for 1..4;
+
+	write_svg(
+		qq{<path d="M$EDGE_OFFSETS[$i],$TILE_SIZE A$CURVE_RADII[2-$i],$CURVE_RADII[2-$i] 0 0,1 $TILE_SIZE,$EDGE_OFFSETS[$i]" fill="none" stroke="$COLOURS[$i]" stroke-width="$LINE_WITH" />},
+		qq{<path d="M$EDGE_OFFSETS[$j],$TILE_SIZE A$CURVE_RADII[2-$j],$CURVE_RADII[2-$j] 0 0,1 $TILE_SIZE,$EDGE_OFFSETS[$j]" fill="none" stroke="$COLOURS[$j]" stroke-width="$LINE_WITH" />},
+	) for 1..4;
+}
+
+# The triple line pieces
+{
+    write_svg(
+		qq{<path d="M$EDGE_OFFSETS[0],0 L$EDGE_OFFSETS[0],$TILE_SIZE" stroke="$COLOURS[0]" stroke-width="$LINE_WITH" />},
+		qq{<path d="M$EDGE_OFFSETS[1],0 L$EDGE_OFFSETS[1],$TILE_SIZE" stroke="$COLOURS[1]" stroke-width="$LINE_WITH" />},
+		qq{<path d="M$EDGE_OFFSETS[2],0 L$EDGE_OFFSETS[2],$TILE_SIZE" stroke="$COLOURS[2]" stroke-width="$LINE_WITH" />},
+	) for 1..6;
+
+	write_svg(
+		qq{<path d="M$EDGE_OFFSETS[0],$TILE_SIZE A$CURVE_RADII[0],$CURVE_RADII[0] 0 0,0 0,$EDGE_OFFSETS[2-0]" fill="none" stroke="$COLOURS[0]" stroke-width="$LINE_WITH" />},
+		qq{<path d="M$EDGE_OFFSETS[1],$TILE_SIZE A$CURVE_RADII[1],$CURVE_RADII[1] 0 0,0 0,$EDGE_OFFSETS[2-1]" fill="none" stroke="$COLOURS[1]" stroke-width="$LINE_WITH" />},
+		qq{<path d="M$EDGE_OFFSETS[2],$TILE_SIZE A$CURVE_RADII[2],$CURVE_RADII[2] 0 0,0 0,$EDGE_OFFSETS[2-2]" fill="none" stroke="$COLOURS[2]" stroke-width="$LINE_WITH" />},
+	) for 1..4;
+
+	write_svg(
+		qq{<path d="M$EDGE_OFFSETS[0],$TILE_SIZE A$CURVE_RADII[2-0],$CURVE_RADII[2-0] 0 0,1 $TILE_SIZE,$EDGE_OFFSETS[0]" fill="none" stroke="$COLOURS[0]" stroke-width="$LINE_WITH" />},
+		qq{<path d="M$EDGE_OFFSETS[1],$TILE_SIZE A$CURVE_RADII[2-1],$CURVE_RADII[2-1] 0 0,1 $TILE_SIZE,$EDGE_OFFSETS[1]" fill="none" stroke="$COLOURS[1]" stroke-width="$LINE_WITH" />},
+		qq{<path d="M$EDGE_OFFSETS[2],$TILE_SIZE A$CURVE_RADII[2-2],$CURVE_RADII[2-2] 0 0,1 $TILE_SIZE,$EDGE_OFFSETS[2]" fill="none" stroke="$COLOURS[2]" stroke-width="$LINE_WITH" />},
+	) for 1..4;
+}
+
+# The switch-track pieces
+
+# Two colour:
+# One line continues, one stops / starts (12)
+for my $col1 (0,1,2) {
+	for my $col2 (grep { $_ != $col1 } (0,1,2)) {
+		for my $edge (0, $TILE_SIZE) {
+			write_svg(
+				qq{<path d="M$EDGE_OFFSETS[$col1],0 L$EDGE_OFFSETS[$col1],$TILE_SIZE" stroke="$COLOURS[$col1]" stroke-width="$LINE_WITH" />},
+				qq{<path d="M$EDGE_OFFSETS[$col2],$edge L$EDGE_OFFSETS[$col2],$HALF_SIZE" stroke="$COLOURS[$col2]" stroke-width="$LINE_WITH" />},
+				qq{<circle cx="$EDGE_OFFSETS[$col2]" cy="$HALF_SIZE" r="$TERMINUS_RADIUS" fill="$COLOURS[$col2]" />},
+			);
+		}
+	}
+}
+
+# One line starts/stops, another stops/starts (6)
+for my $col1 (0,1,2) {
+	my $col2 = ($col1+1) % 3;
+	for my $edge1 (0, $TILE_SIZE) {
+		my $edge2 = $TILE_SIZE - $edge1;
+		write_svg(
+			qq{<path d="M$EDGE_OFFSETS[$col1],$edge1 L$EDGE_OFFSETS[$col1],$HALF_SIZE" stroke="$COLOURS[$col1]" stroke-width="$LINE_WITH" />},
+			qq{<circle cx="$EDGE_OFFSETS[$col1]" cy="$HALF_SIZE" r="$TERMINUS_RADIUS" fill="$COLOURS[$col1]" />},
+			qq{<path d="M$EDGE_OFFSETS[$col2],$edge2 L$EDGE_OFFSETS[$col2],$HALF_SIZE" stroke="$COLOURS[$col2]" stroke-width="$LINE_WITH" />},
+			qq{<circle cx="$EDGE_OFFSETS[$col2]" cy="$HALF_SIZE" r="$TERMINUS_RADIUS" fill="$COLOURS[$col2]" />},
+		);
+	}
+}
+
+# Three colour:
+# One line starts/stops, other two stops/starts (6)
+for my $col1 (0,1,2) {
+	my $col2 = ($col1+1) % 3;
+	my $col3 = ($col1+2) % 3;
+	for my $edge1 (0, $TILE_SIZE) {
+		my $edge2 = $TILE_SIZE - $edge1;
+		write_svg(
+			qq{<path d="M$EDGE_OFFSETS[$col1],$edge1 L$EDGE_OFFSETS[$col1],$HALF_SIZE" stroke="$COLOURS[$col1]" stroke-width="$LINE_WITH" />},
+			qq{<circle cx="$EDGE_OFFSETS[$col1]" cy="$HALF_SIZE" r="$TERMINUS_RADIUS" fill="$COLOURS[$col1]" />},
+			qq{<path d="M$EDGE_OFFSETS[$col2],$edge2 L$EDGE_OFFSETS[$col2],$HALF_SIZE" stroke="$COLOURS[$col2]" stroke-width="$LINE_WITH" />},
+			qq{<circle cx="$EDGE_OFFSETS[$col2]" cy="$HALF_SIZE" r="$TERMINUS_RADIUS" fill="$COLOURS[$col2]" />},
+			qq{<path d="M$EDGE_OFFSETS[$col3],$edge2 L$EDGE_OFFSETS[$col3],$HALF_SIZE" stroke="$COLOURS[$col3]" stroke-width="$LINE_WITH" />},
+			qq{<circle cx="$EDGE_OFFSETS[$col3]" cy="$HALF_SIZE" r="$TERMINUS_RADIUS" fill="$COLOURS[$col3]" />},
+		);
+	}
+}
+
+# One line continues, other two starts/stops (6)
+for my $col1 (0,1,2) {
+	my $col2 = ($col1+1) % 3;
+	my $col3 = ($col1+2) % 3;
+	for my $edge2 (0, $TILE_SIZE) {
+		write_svg(
+			qq{<path d="M$EDGE_OFFSETS[$col1],0 L$EDGE_OFFSETS[$col1],$TILE_SIZE" stroke="$COLOURS[$col1]" stroke-width="$LINE_WITH" />},
+			qq{<path d="M$EDGE_OFFSETS[$col2],$edge2 L$EDGE_OFFSETS[$col2],$HALF_SIZE" stroke="$COLOURS[$col2]" stroke-width="$LINE_WITH" />},
+			qq{<circle cx="$EDGE_OFFSETS[$col2]" cy="$HALF_SIZE" r="$TERMINUS_RADIUS" fill="$COLOURS[$col2]" />},
+			qq{<path d="M$EDGE_OFFSETS[$col3],$edge2 L$EDGE_OFFSETS[$col3],$HALF_SIZE" stroke="$COLOURS[$col3]" stroke-width="$LINE_WITH" />},
+			qq{<circle cx="$EDGE_OFFSETS[$col3]" cy="$HALF_SIZE" r="$TERMINUS_RADIUS" fill="$COLOURS[$col3]" />},
+		);
+	}
+}
+
+# Two lines continue, other one starts/stops (6)
+for my $col1 (0,1,2) {
+	my $col2 = ($col1+1) % 3;
+	my $col3 = ($col1+2) % 3;
+	for my $edge2 (0, $TILE_SIZE) {
+		write_svg(
+			qq{<path d="M$EDGE_OFFSETS[$col1],0 L$EDGE_OFFSETS[$col1],$TILE_SIZE" stroke="$COLOURS[$col1]" stroke-width="$LINE_WITH" />},
+			qq{<path d="M$EDGE_OFFSETS[$col2],0 L$EDGE_OFFSETS[$col2],$TILE_SIZE" stroke="$COLOURS[$col2]" stroke-width="$LINE_WITH" />},
+			qq{<path d="M$EDGE_OFFSETS[$col3],$edge2 L$EDGE_OFFSETS[$col3],$HALF_SIZE" stroke="$COLOURS[$col3]" stroke-width="$LINE_WITH" />},
+			qq{<circle cx="$EDGE_OFFSETS[$col3]" cy="$HALF_SIZE" r="$TERMINUS_RADIUS" fill="$COLOURS[$col3]" />},
+		);
+	}
+}
+
+# One line continues, one starts/stops, one stops/starts (*4* - the "black continues" ones don't exist)
+for my $col1 (0,2) { # See above
+	my $col2 = ($col1+1) % 3;
+	my $col3 = ($col1+2) % 3;
+	for my $edge1 (0, $TILE_SIZE) {
+		my $edge2 = $TILE_SIZE - $edge1;
+		write_svg(
+			qq{<path d="M$EDGE_OFFSETS[$col1],0 L$EDGE_OFFSETS[$col1],$TILE_SIZE" stroke="$COLOURS[$col1]" stroke-width="$LINE_WITH" />},
+			qq{<path d="M$EDGE_OFFSETS[$col2],$edge1 L$EDGE_OFFSETS[$col2],$HALF_SIZE" stroke="$COLOURS[$col2]" stroke-width="$LINE_WITH" />},
+			qq{<circle cx="$EDGE_OFFSETS[$col2]" cy="$HALF_SIZE" r="$TERMINUS_RADIUS" fill="$COLOURS[$col2]" />},
+			qq{<path d="M$EDGE_OFFSETS[$col3],$edge2 L$EDGE_OFFSETS[$col3],$HALF_SIZE" stroke="$COLOURS[$col3]" stroke-width="$LINE_WITH" />},
+			qq{<circle cx="$EDGE_OFFSETS[$col3]" cy="$HALF_SIZE" r="$TERMINUS_RADIUS" fill="$COLOURS[$col3]" />},
+		);
+	}
+}
+
+# The junctions:
+
+# red stop, black ahead, blue right
+write_svg(
+		qq{<path d="M$EDGE_OFFSETS[0],$TILE_SIZE L$EDGE_OFFSETS[0],$HALF_SIZE" stroke="$COLOURS[0]" stroke-width="$LINE_WITH" />},
+		qq{<circle cx="$EDGE_OFFSETS[0]" cy="$HALF_SIZE" r="$TERMINUS_RADIUS" fill="$COLOURS[0]" />},
+		qq{<path d="M$EDGE_OFFSETS[1],0 L$EDGE_OFFSETS[1],$TILE_SIZE" stroke="$COLOURS[1]" stroke-width="$LINE_WITH" />},
+		qq{<path d="M$EDGE_OFFSETS[2],$TILE_SIZE A$CURVE_RADII[0],$CURVE_RADII[0] 0 0,1 $TILE_SIZE,$EDGE_OFFSETS[2]" fill="none" stroke="$COLOURS[2]" stroke-width="$LINE_WITH" />},
+);
+
+# blue left, black left, red ahead
+write_svg(
+		qq{<path d="M$EDGE_OFFSETS[0],$TILE_SIZE A$CURVE_RADII[0],$CURVE_RADII[0] 0 0,0 0,$EDGE_OFFSETS[2-0]" fill="none" stroke="$COLOURS[2]" stroke-width="$LINE_WITH" />},
+		qq{<path d="M$EDGE_OFFSETS[1],$TILE_SIZE A$CURVE_RADII[1],$CURVE_RADII[1] 0 0,0 0,$EDGE_OFFSETS[2-1]" fill="none" stroke="$COLOURS[1]" stroke-width="$LINE_WITH" />},
+		qq{<path d="M$EDGE_OFFSETS[2],0 L$EDGE_OFFSETS[2],$TILE_SIZE" stroke="$COLOURS[0]" stroke-width="$LINE_WITH" />},
+);
+
+exit;
+
+sub write_svg {
+	my $n = sprintf "galt-%03d.svg", ++$seq;
+	open(my $fh, ">$n") or die $!;
+	print $fh
+		qq{<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
+"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<svg width="100%" height="100%" version="1.1"
+xmlns="http://www.w3.org/2000/svg">
+
+<rect x="0" y="0" width="$TILE_SIZE" height="$TILE_SIZE" style="fill: white" />
+<rect x="0" y="0" width="280" height="280" style="fill: none; stroke: #ccc;
+	stroke-width: 1"
+	/>
+};
+	print $fh @_;
+	print $fh qq{
+
+</svg>
+};
+	close $fh;
+}
+
+# eof make-svg
