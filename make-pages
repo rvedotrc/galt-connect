@@ -1,0 +1,50 @@
+#!/usr/bin/perl
+# vi: set ts=4 sw=4 :
+
+use warnings;
+use strict;
+
+my $size = 280;
+my $cols = 4;
+my $rows = 5;
+
+my $page = 0;
+my @f = <galt-*.svg>;
+
+while (@f) {
+
+	++$page;
+	open(my $fh, ">page-$page.svg") or die $!;
+
+	print $fh <<EOF;
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
+"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<svg width="${\($size*$cols)}" height="${\($size*$rows)}" version="1.1"
+	xmlns="http://www.w3.org/2000/svg"
+	xmlns:xlink="http://www.w3.org/1999/xlink">
+EOF
+
+	for my $row (0..$rows-1) {
+		for my $col (0..$cols-1) {
+
+			my $file = shift @f
+				or next;
+
+			my $x = $size * $col;
+			my $y = $size * $row;
+			print $fh <<EOF;
+<image x="$x" y="$y" width="$size" height="$size" xlink:href="$file"/>
+EOF
+		}
+	}
+
+	print $fh <<EOF;
+</svg>
+EOF
+
+	close $fh;
+}
+
+# eof make-pages
